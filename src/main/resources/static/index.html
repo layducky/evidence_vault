@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evidence Vault</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Evidence Vault</h1>
+  <span id="health" class="pill">checking…</span>
+</header>
+
+<main>
+  <section class="card">
+    <h2>New case</h2>
+    <form id="case-form">
+      <label>Case number <input name="caseNumber" required maxlength="64" placeholder="C-2026-001"></label>
+      <label>Title <input name="title" required maxlength="255" placeholder="Burglary at 5th Ave"></label>
+      <button type="submit">Create case</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Cases</h2>
+    <form id="lookup-form" class="inline">
+      <input name="id" required placeholder="Case ID (UUID)">
+      <button type="submit">Open</button>
+    </form>
+    <ul id="recent" class="list"></ul>
+    <p class="hint">Cases you create or open are remembered in this browser.</p>
+  </section>
+
+  <section class="card wide" id="case-panel" hidden>
+    <h2 id="case-title"></h2>
+    <p class="meta" id="case-meta"></p>
+
+    <h3>Register evidence</h3>
+    <form id="evidence-form" class="grid">
+      <label>File name <input name="fileName" required maxlength="255" placeholder="bodycam-0001.mp4"></label>
+      <label>Content type <input name="contentType" required maxlength="127" value="video/mp4"></label>
+      <label>Size (bytes) <input name="sizeBytes" type="number" min="0" value="0" required></label>
+      <label>Retain until <input name="retainUntil" type="date"></label>
+      <button type="submit">Register</button>
+    </form>
+
+    <h3>Evidence</h3>
+    <table>
+      <thead><tr><th>File</th><th>Type</th><th>Size</th><th>Status</th><th>Legal hold</th><th>Retain until</th></tr></thead>
+      <tbody id="evidence-rows"></tbody>
+    </table>
+  </section>
+</main>
+
+<div id="toast" role="status" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

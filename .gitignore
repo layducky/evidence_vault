@@ -1,0 +1,62 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Local overrides ###
+application-local.properties
+
+### Claude Code local ###
+.claude/settings.local.json
+CLAUDE.local.md
+
+### Runtime data (blob store, dev keys; see plans phase 4/5) ###
+data/
+
+### Logs and JVM crash files ###
+*.log
+hs_err_pid*
+replay_pid*
+
+### Secrets (defensive) ###
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini

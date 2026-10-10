@@ -1,0 +1,5 @@
+# Copy to application-local.properties (git-ignored) to override local settings.
+# Optional: application.yml already has local-dev defaults. In CI/prod, set these as environment variables instead.
+DB_URL=jdbc:postgresql://localhost:5432/evidence_vault
+DB_USERNAME=ev
+DB_PASSWORD=ev

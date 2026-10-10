@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All tests" type="JUnit" factoryName="JUnit">
+    <module name="evidence-vault" />
+    <option name="PACKAGE_NAME" value="com.evidencevault" />
+    <option name="TEST_OBJECT" value="package" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="SEARCH_SCOPE">
+      <value defaultName="singleModule" />
+    </option>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
