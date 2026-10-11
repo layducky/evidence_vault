@@ -27,13 +27,13 @@ Each concurrency problem has three kinds of test, all JUnit + Testcontainers:
    (no evidence both held and deleted; no fork in the hash chain; no job run twice). Must pass every run.
 3. **Naive stress** (optional): the same stress test against the naive version, tagged `@Tag("naive")` and
    excluded from the default build. Run on demand to measure the failure rate:
-   `./mvnw test -Dgroups=naive -DexcludedGroups=none`.
+   `./mvnw test -Dgroups=naive -DexcludedGroups=`.
 
 - **MUST** assert the invariant itself, not just "no exception was thrown".
 - **MUST NOT** use `Thread.sleep` to create interleavings. Use latches or barriers.
 - **MUST** record the observed failure rate of the naive version in the problem's doc.
 
 ## Running
-- Full suite: `./mvnw verify` or IntelliJ **All tests** (Docker must be running).
+- Full suite: `./mvnw verify`, or in IntelliJ right-click `src/test/java` → *Run All Tests* (Docker must be running).
 - One class or method: `./mvnw -B -q test -Dtest='ClassName#method' -Dsurefire.failIfNoSpecifiedTests=false`.
 - The `Stop` hook only compiles (`test-compile`). Run the relevant tests before saying work is done.

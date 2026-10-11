@@ -33,4 +33,4 @@ Prefer the cheapest correct option, in this order, and justify the choice in the
 ## Proof
 - **MUST** ship every concurrency fix with a reproduction test (`support/Concurrently`) that fails on the naive
   version and passes on the fix, plus `docs/concurrency/NN-*.md` from `_TEMPLATE.md`.
-  Use the `/concurrency-problem` skill.
+  Start the doc from `docs/concurrency/_TEMPLATE.md`.

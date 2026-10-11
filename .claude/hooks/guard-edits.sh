@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # guard-edits.sh
 #
-# PreToolUse (Edit|Write): enforces two CLAUDE.md rules deterministically.
+# PreToolUse (Edit|Write): enforces two .claude/CLAUDE.md rules deterministically.
 #   1. Never edit an existing Flyway migration. A migration is "existing" once git
 #      tracks it (staged or committed). Creating a new V<N>__*.sql is allowed.
 #   2. Never introduce an in-memory database. Edits to pom.xml or src/** that add

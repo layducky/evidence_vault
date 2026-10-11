@@ -45,11 +45,28 @@
       <button type="submit">Register</button>
     </form>
 
+    <h3>Legal holds on this case</h3>
+    <form id="hold-form" class="grid">
+      <label>Reason <input name="reason" required maxlength="500" placeholder="Litigation 2026-17"></label>
+      <label>Placed by <input name="placedBy" required maxlength="128" placeholder="counsel@example.com"></label>
+      <button type="submit">Place legal hold</button>
+    </form>
+    <ul id="holds" class="list"></ul>
+
     <h3>Evidence</h3>
     <table>
-      <thead><tr><th>File</th><th>Type</th><th>Size</th><th>Status</th><th>Legal hold</th><th>Retain until</th></tr></thead>
+      <thead><tr><th>File</th><th>Type</th><th>Size</th><th>Status</th><th>Legal hold</th><th>Retain until</th><th></th></tr></thead>
       <tbody id="evidence-rows"></tbody>
     </table>
+  </section>
+
+  <section class="card wide">
+    <h2>Retention</h2>
+    <form id="retention-form" class="inline">
+      <button type="submit">Run retention (one batch)</button>
+    </form>
+    <p class="hint">Soft-deletes expired evidence unless it or its case is under legal hold. The scheduled job does
+      the same every minute.</p>
   </section>
 </main>
 

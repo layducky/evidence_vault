@@ -13,7 +13,7 @@ migrations or docs other than the plan itself.
 
 ## Inputs to read first
 1. `docs/PLAN.md` §3: the phase's checklist is the scope. Nothing outside it unless it is a prerequisite.
-2. `CLAUDE.md` and every file in `rules/`: the plan must obey them. Quote the rule when a step depends on it.
+2. `.claude/CLAUDE.md` and every file in `rules/`: the plan must obey them. Quote the rule when a step depends on it.
 3. The current code: list `src/main/java/com/evidencevault/**`, `src/main/resources/db/migration/`, and existing
    tests. The plan must start from what exists (next migration number, existing services to extend).
 4. The existing plan file, if any. With `--refresh`, keep ticked steps and their notes and re-plan only the rest.
@@ -37,6 +37,27 @@ migrations or docs other than the plan itself.
   the reason, instead of planning something incorrect.
 - Unknowns go to "Open questions". Do not guess silently.
 
+## Self-review → "0. Review findings"
+Before writing the file, review your own design as an adversarial reviewer would. For concurrency steps, check
+every claim against PostgreSQL semantics, not intuition:
+- when the snapshot is taken (READ COMMITTED: per statement; REPEATABLE READ/SERIALIZABLE: at the first
+  statement, **before** it waits on a lock), and what a locking read does on a row updated vs. only locked;
+- lock modes and their conflicts, lock acquisition order across **all** write paths (deadlocks), SKIP LOCKED
+  interactions with other paths' locks, EvalPlanQual re-checks, SSI only covering SERIALIZABLE transactions;
+- whether each deterministic test can really force its interleaving (where can a thread block? does a retry
+  re-run the hook?), test data isolation, Spring proxy pitfalls (fields set on a CGLIB proxy, self-invocation);
+- liveness: batch jobs that can starve or loop forever.
+
+Record every issue in section **0. Review findings** of the plan, one row each:
+- **Blocker**: as written, the plan yields incorrect code, a broken invariant, or a test that cannot behave
+  as specified. Give the failing interleaving or reason, and a proposed resolution.
+- **Minor**: deviation from a rule, ambiguity, or a choice with a sensible default. Give the proposed default.
+
+Write the design (§5–§7) **with the proposed resolutions applied**, and mark each affected place with the finding
+id (e.g. `(B-1)`). Every finding starts with Decision `⬜ open`; only the user changes it (to `✅ accepted` or their
+own resolution). Questions that are not about correctness can stay in "Open questions".
+
 ## Output
-Write the file, then reply with: the path, the number of steps and test cases, and the open questions.
-Do not start implementing; tell the user to run `/impl-phase <N>` when ready.
+Write the file, then reply with: the path, the number of steps and test cases, a short list of the Blockers and
+Minors (one line each), and the open questions. Ask the user to decide the findings; `/impl-phase` refuses to
+run while any finding is `⬜ open`. Do not start implementing.

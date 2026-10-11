@@ -19,9 +19,12 @@ Rules use **MUST / MUST NOT / SHOULD**. When in doubt, mirror an existing featur
 - `./mvnw spring-boot:run` – run the app against the DB in `application-local.properties` (git-ignored; defaults in `application.yml`)
 - `./mvnw verify` – build and all tests (Testcontainers, needs Docker)
 - `./mvnw -B -q test -Dtest='Class#method' -Dsurefire.failIfNoSpecifiedTests=false` – one test
+- `./mvnw test -Dgroups=naive -DexcludedGroups= -Dtest=…` / `-Dgroups=bench …` – on-demand naive stress tests and
+  benchmarks (excluded from the default build)
 
 ## Workflow (skills)
-- `/impl-plan <phase>` – write or refresh `plans/phase-N-*.md`. User-invoked only.
+- `/impl-plan <phase>` – write or refresh `plans/phase-N-*.md`, with a self-review listing Blocker/Minor findings
+  (§0) for the user to decide. User-invoked only. `/impl-phase` refuses to run while a finding is open.
 - `/impl-phase <phase> [steps]` – implement plan steps, code and tests together; no step ids = all unticked steps of the phase. User-invoked only.
   Never implement a plan unless the user runs this.
 - `/new-migration <desc>` – next `V<N>__*.sql`.

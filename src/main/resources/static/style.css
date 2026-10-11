@@ -89,6 +89,7 @@ button {
   cursor: pointer;
 }
 button:hover { filter: brightness(1.08); }
+button.small { padding: 4px 10px; font-size: 12px; }
 
 .list { list-style: none; margin: 12px 0 0; padding: 0; }
 .list li {
@@ -102,6 +103,9 @@ button:hover { filter: brightness(1.08); }
 .list li:hover { background: var(--bg); }
 .list .num { font-weight: 600; }
 .list .sub { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#holds li { cursor: default; align-items: center; }
+#holds .sub { flex: 1; }
+.list li.empty { color: var(--muted); cursor: default; }
 
 .hint, .meta { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
 .meta code { font-size: 12px; }

@@ -79,7 +79,7 @@ async function openCase(id) {
       `Status ${c.status} · created ${new Date(c.createdAt).toLocaleString()} · id `,
       Object.assign(document.createElement("code"), { textContent: c.id }),
     );
-    await loadEvidence();
+    await Promise.all([loadEvidence(), loadHolds()]);
     $("#case-panel").scrollIntoView({ behavior: "smooth" });
   } catch (e) {
     toast(e.message, true);
@@ -90,7 +90,7 @@ async function loadEvidence() {
   const rows = await api(`/api/cases/${currentCaseId}/evidence`);
   const tbody = $("#evidence-rows");
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">No evidence yet</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">No evidence yet</td></tr>`;
     return;
   }
   tbody.replaceChildren(...rows.map((e) => {
@@ -103,8 +103,50 @@ async function loadEvidence() {
       e.legalHold ? "Yes" : "No",
       e.retainUntil ? new Date(e.retainUntil).toLocaleDateString() : "—",
     ].forEach((v) => tr.appendChild(Object.assign(document.createElement("td"), { textContent: v })));
+    // Evidence-level hold: POST places it, DELETE releases it.
+    const toggle = button(e.legalHold ? "Release hold" : "Hold", async () => {
+      await api(`/api/evidence/${e.id}/legal-hold`, { method: e.legalHold ? "DELETE" : "POST" });
+      toast(`${e.legalHold ? "Released hold on" : "Held"} ${e.fileName}`);
+      await loadEvidence();
+    });
+    tr.appendChild(document.createElement("td")).appendChild(toggle);
     return tr;
   }));
+}
+
+async function loadHolds() {
+  const holds = await api(`/api/cases/${currentCaseId}/legal-holds`);
+  const ul = $("#holds");
+  if (holds.length === 0) {
+    ul.innerHTML = `<li class="empty">No active legal hold</li>`;
+    return;
+  }
+  ul.replaceChildren(...holds.map((h) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="num"></span><span class="sub"></span>`;
+    li.querySelector(".num").textContent = h.reason;
+    li.querySelector(".sub").textContent = `by ${h.placedBy} · ${new Date(h.placedAt).toLocaleString()}`;
+    li.appendChild(button("Release", async () => {
+      await api(`/api/cases/${currentCaseId}/legal-holds/${h.id}`, { method: "DELETE" });
+      toast("Legal hold released");
+      await loadHolds();
+    }));
+    return li;
+  }));
+}
+
+/** A small button whose async errors show up as a toast. */
+function button(label, onClick) {
+  const b = Object.assign(document.createElement("button"), { type: "button", textContent: label, className: "small" });
+  b.onclick = async (ev) => {
+    ev.stopPropagation();
+    try {
+      await onClick();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+  return b;
 }
 
 // --- wiring ---
@@ -140,6 +182,32 @@ $("#evidence-form").addEventListener("submit", async (ev) => {
     ev.target.fileName.value = "";
     toast(`Registered ${body.fileName}`);
     await loadEvidence();
+  } catch (e) {
+    toast(e.message, true);
+  }
+});
+
+$("#hold-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  try {
+    const hold = await api(`/api/cases/${currentCaseId}/legal-holds`,
+      { method: "POST", body: JSON.stringify(formJson(ev.target)) });
+    ev.target.reset();
+    toast(`Legal hold placed: ${hold.frozenEvidenceIds.length} evidence frozen`);
+    await loadHolds();
+  } catch (e) {
+    toast(e.message, true);
+  }
+});
+
+$("#retention-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  try {
+    const run = await api("/api/admin/retention/run", { method: "POST" });
+    toast(`Retention (${run.strategy}) deleted ${run.deleted} evidence`);
+    if (currentCaseId) {
+      await loadEvidence();
+    }
   } catch (e) {
     toast(e.message, true);
   }

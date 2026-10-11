@@ -2,6 +2,16 @@
 
 > Status: ⬜ Not started · Roadmap: `docs/PLAN.md` §3 · Implement with `/impl-phase N [step]`
 
+## 0. Review findings (decide before `/impl-phase`)
+Blocker = the plan as originally written would give wrong code or a test that cannot behave as specified.
+Minor = rule deviation, ambiguity or a default choice. The design below already applies the proposed
+resolutions, marked with the finding id. `/impl-phase` refuses to run while any Decision is `⬜ open`.
+
+| ID | Severity | Finding | Proposed resolution | Decision |
+|----|----------|---------|---------------------|----------|
+| B-1 | Blocker | … | … | ⬜ open |
+| M-1 | Minor | … | … | ⬜ open |
+
 ## 1. Goal
 One short paragraph: what this phase proves (the story to tell in an interview).
 

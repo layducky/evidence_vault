@@ -27,19 +27,20 @@ Modular monolith, packaged by feature:
 ```
 com.evidencevault
 ├── common/web     # error handling (ProblemDetail), shared exceptions
+├── common/tx      # SerializableTx: SERIALIZABLE + retry on 40001
 ├── casefile       # Case (case file)                     [done]
 ├── evidence       # Evidence metadata                    [done]
-├── retention      # Retention + legal hold               Phase 1
+├── retention      # Retention + legal hold               Phase 1 [done]
 ├── custody        # Chain of custody (hash chain)        Phase 2
 ├── jobs           # Job queue SKIP LOCKED, lease, fencing Phase 3
 ├── outbox         # Transactional outbox + relay         Phase 3
 ├── idempotency    # Idempotency-Key                      Phase 4
-├── upload         # Chunked upload, MinIO, SHA-256       Phase 4
+├── upload         # Chunked upload, BlobStore, SHA-256   Phase 4
 └── sharing        # Share links with a view limit        Phase 4
 ```
 
-Stack: Java 25 (virtual threads), Spring Boot 4.1, Spring Data JPA (Hibernate 7), PostgreSQL 17, Flyway, Testcontainers.
-Added over time: Spring Security + OAuth2 (Keycloak), Redis, MinIO, Micrometer/Prometheus/Grafana, k6, GitHub Actions.
+Stack: Java 25 (virtual threads), Spring Boot 4.1, Spring Data JPA (Hibernate 7), PostgreSQL (16+ locally, 17 in tests), Flyway, Testcontainers.
+Added over time, without new infrastructure to run locally (see the "Changes vs PLAN.md" section of each plan): Spring Security as an OAuth2 resource server (JWT, no Keycloak), a local-file `BlobStore` (no MinIO), Micrometer, Toxiproxy in tests, k6 for benchmarks only. GitHub Actions CI is done.
 
 ## 3. Roadmap
 
@@ -56,17 +57,18 @@ Added over time: Spring Security + OAuth2 (Keycloak), Redis, MinIO, Micrometer/P
 - [x] `GlobalExceptionHandler` returns RFC 9457 ProblemDetail, maps optimistic lock failures to 409
 - [x] `support/Concurrently`: fires N tasks at once via a latch
 - [x] Sample test: 20 requests creating the same `caseNumber` give exactly 1 success and 19 get 409
-- [ ] `git init`, push to GitHub, GitHub Actions runs `./mvnw verify`
+- [x] `git init`, push to GitHub, GitHub Actions runs `./mvnw verify`
 
-### Phase 1 – Write skew: Legal hold and Retention ⭐ (week 1)
-- [ ] API `POST /api/evidence/{id}/legal-hold`, `DELETE .../legal-hold`
-- [ ] `RetentionJob` (`@Scheduled`) soft-deletes expired evidence in batches
-- [ ] `NaiveRetentionService`: read, then check, then delete at `READ COMMITTED`, **can delete evidence that is on hold**
-- [ ] Reproduction test: run "place hold" and "run retention" in parallel N times, then assert that no evidence is both on hold and deleted (the naive version fails)
-- [ ] Fix A: `SELECT ... FOR UPDATE` (pessimistic)
-- [ ] Fix B: `@Transactional(isolation = SERIALIZABLE)` + retry on `40001` (Spring Retry)
-- [ ] Fix C: a single atomic `UPDATE ... WHERE legal_hold = false AND retain_until < now()`
-- [ ] Benchmark A/B/C, write `docs/concurrency/01-write-skew-legal-hold.md`
+### Phase 1 – Write skew: Legal hold and Retention ⭐ (week 1) ✅
+> Details and deviations: `plans/phase-1-write-skew-legal-hold.md`. Write-up: `docs/concurrency/01-write-skew-legal-hold.md`.
+- [x] API `POST /api/evidence/{id}/legal-hold`, `DELETE .../legal-hold` (plus case-level holds: `/api/cases/{caseId}/legal-holds`, table `legal_hold`)
+- [x] `RetentionJob` (`@Scheduled`) soft-deletes expired evidence in batches
+- [x] `NaiveRetentionService`: read, then check, then delete at `READ COMMITTED`, **can delete evidence that is on hold**
+- [x] Reproduction test: deterministic interleaving (5/5) + stress, naive fails 151/200 rounds
+- [x] Fix A: locking (case `FOR SHARE` → evidence `FOR UPDATE SKIP LOCKED`; the hold reads evidence `FOR SHARE`) — default, ADR 0001
+- [x] Fix B: SERIALIZABLE + retry on `40001` (own `SerializableTx`, no Spring Retry)
+- [x] Fix C: a single atomic `UPDATE` — **proven still wrong** (statement snapshot), kept as an experiment
+- [x] Benchmark A/B/C, write `docs/concurrency/01-write-skew-legal-hold.md`
 
 ### Phase 2 – Chain of custody with a hash chain (week 2)
 - [ ] `V2`: `custody_event(case_id, seq, actor, action, payload jsonb, prev_hash, hash, created_at)`, `UNIQUE(case_id, seq)`
@@ -92,7 +94,7 @@ Added over time: Spring Security + OAuth2 (Keycloak), Redis, MinIO, Micrometer/P
 
 ### Phase 4 – Idempotency, Upload, Sharing (week 4)
 - [ ] `Idempotency-Key`: `INSERT ... ON CONFLICT DO NOTHING` with status `IN_PROGRESS`. A duplicate request still in progress gets 409. A duplicate request already finished gets the stored response. Same key with a different body (compared by hash) gets 422
-- [ ] Chunked upload to MinIO (S3 multipart, presigned URL). The finalize step runs **exactly once** (`UPDATE ... SET status='FINALIZING' WHERE status='UPLOADING'`)
+- [ ] Chunked upload through a `BlobStore` interface (local files; S3/MinIO can be added later). The finalize step runs **exactly once** (`UPDATE ... SET status='FINALIZING' WHERE status='UPLOADING'`)
 - [ ] Dedup by SHA-256 with a unique constraint, not check-then-insert
 - [ ] Share link: `UPDATE ... SET remaining = remaining - 1 WHERE remaining > 0 AND expires_at > now() RETURNING`
 - [ ] Optimistic locking for metadata via `ETag`/`If-Match`; a stale version gets 412
@@ -100,10 +102,10 @@ Added over time: Spring Security + OAuth2 (Keycloak), Redis, MinIO, Micrometer/P
 - [ ] `docs/concurrency/05-*.md` … `08-*.md`
 
 ### Phase 5 – Performance, observability, security (week 5)
-- [ ] Partition `custody_event` by month. Seed about 10 million rows, put `EXPLAIN ANALYZE` before and after in the README
+- [ ] Partition `custody_event` by `HASH(case_id)` (keeps `UNIQUE(case_id, seq)`; monthly partitioning cannot). Seed about 10 million rows, put `EXPLAIN ANALYZE` before and after in the README
 - [ ] Full-text search (`tsvector` + GIN) on evidence description and tags
-- [ ] Spring Security + Keycloak (JWT). Per-case authorization (try Postgres Row-Level Security)
-- [ ] Micrometer + Prometheus + Grafana: retry count, queue latency, dead job count, lock wait time
+- [ ] Spring Security with JWT (resource server, no Keycloak). Per-case authorization (try Postgres Row-Level Security)
+- [ ] Micrometer metrics on `/actuator/prometheus` (no Prometheus/Grafana server locally): retry count, queue latency, dead job count, lock wait time
 - [ ] Virtual threads: demonstrate pool exhaustion (10k requests, 20 connections), then add a `Semaphore` bulkhead
 - [ ] k6 load test, record p95/p99 and throughput
 - [ ] Chaos: Toxiproxy slows down or drops the DB connection; verify no data is lost or duplicated
@@ -125,4 +127,3 @@ Added over time: Spring Security + OAuth2 (Keycloak), Redis, MinIO, Micrometer/P
 ./mvnw spring-boot:run        # app at http://localhost:8080, DB configured in application-local.properties
 ./mvnw verify                 # tests (needs Docker for Testcontainers)
 ```
-Or run `TestEvidenceVaultApplication` in the IDE: the app starts Postgres itself via Testcontainers.

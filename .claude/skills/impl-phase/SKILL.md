@@ -16,10 +16,14 @@ an open question), do everything around it that you can, leave it unticked with 
 do, and continue with the next step if it does not depend on that one. If a later step depends on it, stop there.
 
 ## Before writing code
-1. Read the plan `plans/phase-<N>-*.md`, `CLAUDE.md`, and the `rules/` files the plan references.
-2. Check the step's prerequisites (earlier steps ticked, migration numbers still free, classes it extends exist).
+1. Read the plan `plans/phase-<N>-*.md`, `.claude/CLAUDE.md`, and the `rules/` files the plan references.
+2. Check section **0. Review findings**. If any finding has Decision `⬜ open`, **stop**: list the open findings
+   (id, severity, one line each) and ask the user to decide them. Do not write code, and do not change a
+   Decision yourself unless the user has just decided it in this conversation (then record their decision
+   and the date).
+3. Check the step's prerequisites (earlier steps ticked, migration numbers still free, classes it extends exist).
    If the code has drifted from the plan, **stop and report the conflict**. Do not improvise a new design.
-3. If a step is ambiguous or the plan lists an open question that affects it, ask the user (AskUserQuestion).
+4. If a step is ambiguous or the plan lists an open question that affects it, ask the user (AskUserQuestion).
 
 ## For each requested step, in order
 1. Write the **test(s) listed for the step and the production code together**. Follow the names in the plan.

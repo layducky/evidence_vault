@@ -5,7 +5,7 @@ and, more importantly, **where its output was wrong** and how that was caught.
 
 ## Workflow
 1. Write the failing test first (often a concurrency reproduction), by hand.
-2. Ask the assistant for an implementation, with the constraints in `CLAUDE.md` in context.
+2. Ask the assistant for an implementation, with the constraints in `.claude/CLAUDE.md` in context.
 3. Review every line: transaction boundaries, isolation level, locking, constraint usage, N+1 queries.
 4. Run the test suite against real Postgres. Iterate.
 5. Log notable mistakes below.
