@@ -25,6 +25,8 @@ curl -X POST localhost:8080/api/cases -H 'Content-Type: application/json' \
 Once running, a minimal UI is at http://localhost:8080 (static HTML/CSS/JS in `src/main/resources/static`):
 cases, evidence, legal holds and a "Run retention" button.
 
+![Evidence Vault UI: a case with a legal hold, evidence with per-item holds, and the retention button](docs/images/ui.png)
+
 On-demand test suites, excluded from the default build:
 ```bash
 ./mvnw test -Dgroups=naive -DexcludedGroups= -Dtest=RetentionStressTest     # failure rate of the naive version
